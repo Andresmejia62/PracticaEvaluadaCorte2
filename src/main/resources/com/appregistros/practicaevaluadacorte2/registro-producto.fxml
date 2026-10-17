@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane prefHeight="600.0" prefWidth="1100.0" style="-fx-background-color: #fff0f0;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.appregistros.practicaevaluadacorte2.ProductoController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+
+    <!-- FORMULARIO -->
+    <left>
+        <VBox prefWidth="270.0" spacing="8.0" style="-fx-background-color: #ffe9e9;">
+            <padding>
+                <Insets right="20.0" />
+            </padding>
+
+            <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Formulario de producto">
+            <font>
+               <Font name="System Bold" size="28.0" />
+            </font></Label>
+
+            <Label text="Código" />
+            <TextField fx:id="txtCodigo" promptText="Ej. P001" />
+
+            <Label text="Nombre" />
+            <TextField fx:id="txtNombre" />
+
+            <Label text="Categoría" />
+            <ComboBox fx:id="cmbCategoria" maxWidth="Infinity" promptText="Seleccione" />
+
+            <Label text="Precio" />
+            <TextField fx:id="txtPrecio" promptText="Ej. 65.00" />
+
+            <Label text="Stock" />
+            <TextField fx:id="txtStock" promptText="Ej. 25" />
+
+            <FlowPane hgap="8.0" vgap="8.0">
+                <padding>
+                    <Insets top="10.0" />
+                </padding>
+                <Button onAction="#onNuevo" text="Nuevo" />
+                <Button onAction="#onGuardar" style="-fx-background-color: #69dbff; -fx-font-style: #69dbff;" text="Guardar" />
+                <Button onAction="#onActualizar" text="Actualizar" />
+                <Button onAction="#onEliminar" text="Eliminar" />
+            </FlowPane>
+
+            <Label fx:id="lblMensaje" wrapText="true" />
+        </VBox>
+    </left>
+
+    <!-- BÚSQUEDA, FILTROS Y TABLA -->
+    <center>
+        <VBox spacing="10.0">
+            <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Catálogo de productos" />
+
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <TextField fx:id="txtBuscar" onAction="#onBuscar" promptText="Buscar por nombre o código" HBox.hgrow="ALWAYS" />
+                <Label text="Categoría" />
+                <ComboBox fx:id="cmbFiltroCategoria" prefWidth="130.0" />
+                <Label text="Existencias" />
+                <ComboBox fx:id="cmbFiltroStock" prefWidth="140.0" />
+            </HBox>
+
+            <HBox spacing="10.0">
+                <Button onAction="#onBuscar" style="-fx-background-color: #6fff84;" text="Buscar" />
+                <Button onAction="#onLimpiarFiltros" text="Limpiar filtros" />
+                <Button onAction="#onRecargar" text="Recargar" />
+            </HBox>
+
+            <Separator />
+
+            <TableView fx:id="tblProductos" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colId" prefWidth="50.0" text="ID" />
+                    <TableColumn fx:id="colCodigo" prefWidth="80.0" text="Código" />
+                    <TableColumn fx:id="colNombre" prefWidth="230.0" text="Nombre" />
+                    <TableColumn fx:id="colCategoria" prefWidth="110.0" text="Categoría" />
+                    <TableColumn fx:id="colPrecio" prefWidth="90.0" text="Precio " />
+                    <TableColumn fx:id="colStock" prefWidth="70.0" text="Stock" />
+                </columns>
+            </TableView>
+
+            <Label fx:id="lblContador" style="-fx-font-weight: bold;" />
+        </VBox>
+    </center>
+</BorderPane>
