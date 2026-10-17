@@ -1,4 +1,5 @@
 create schema catalogo
+
 create table catalogo.producto (
     id_producto serial primary key,
     codigo varchar(10) not null unique,
@@ -6,6 +7,9 @@ create table catalogo.producto (
     categoria varchar(20) not null,
     precio numeric(10,2) not null,
     stock integer not null,
+
+    constraint chk_codigo_normalizado check (codigo = upper(trim(codigo)) and char_length(codigo) > 0),
+    constraint chk_nombre_longitud check (nombre = trim(nombre) and char_length(nombre) between 1 and 80),
     constraint chk_precio check (precio > 0),
     constraint chk_stock check (stock > 0),
     constraint chk_categoria check (categoria in ('Papeleria', 'Tecnologia', 'Accesorios'))
