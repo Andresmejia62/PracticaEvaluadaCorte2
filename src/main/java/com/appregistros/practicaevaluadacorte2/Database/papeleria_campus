@@ -29,5 +29,23 @@ insert into catalogo.producto (codigo, nombre, categoria, precio, stock) values
 ('A003', 'Botella reutilizable',   'Accesorios', 240.00,  1),
 ('A004', 'Regla metálica',         'Accesorios',  45.00, 20);
 
+-- chk_codigo_normalizado (código en minúsculas)
+insert into catalogo.producto (codigo, nombre, categoria, precio, stock)
+values ('x001', 'Prueba', 'Papelería', 10.00, 1);
 
+-- chk_nombre_longitud (nombre vacío)
+insert into catalogo.producto (codigo, nombre, categoria, precio, stock)
+values ('X002', '', 'Papelería', 10.00, 1);
+
+-- chk_categoria (categoría fuera de la lista)
+insert into catalogo.producto (codigo, nombre, categoria, precio, stock)
+values ('X003', 'Prueba', 'Muebles', 10.00, 1);
+
+-- chk_precio (precio en cero)
+insert into catalogo.producto (codigo, nombre, categoria, precio, stock)
+values ('X004', 'Prueba', 'Papelería', 0, 1);
+
+--chk_stock (stock negativo)
+insert into catalogo.producto (codigo, nombre, categoria, precio, stock)
+values ('X005', 'Prueba', 'Papelería', 10.00, -1);
 
