@@ -58,7 +58,7 @@
             <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Catálogo de productos" />
 
             <HBox alignment="CENTER_LEFT" spacing="10.0">
-                <TextField fx:id="txtBuscar" onAction="#onBuscar" promptText="Buscar por nombre o código" HBox.hgrow="ALWAYS" />
+                <TextField fx:id="txtBuscar" onAction="#Buscar" promptText="Buscar por nombre o código" HBox.hgrow="ALWAYS" />
                 <Label text="Categoría" />
                 <ComboBox fx:id="cmbFiltroCategoria" prefWidth="130.0" />
                 <Label text="Existencias" />
