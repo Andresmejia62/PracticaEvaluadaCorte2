@@ -5,12 +5,11 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane prefHeight="600.0" prefWidth="1100.0" style="-fx-background-color: #fff0f0;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.appregistros.practicaevaluadacorte2.ProductoController">
+<BorderPane prefHeight="600.0" prefWidth="1100.0" style="-fx-background-color: #fff0f0;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.appregistros.practicaevaluadacorte2.controller.ProductoController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
 
-    <!-- FORMULARIO -->
     <left>
         <VBox prefWidth="270.0" spacing="8.0" style="-fx-background-color: #ffe9e9;">
             <padding>
@@ -21,6 +20,9 @@
             <font>
                <Font name="System Bold" size="28.0" />
             </font></Label>
+
+            <Label managed="false" text="ID" visible="false" />
+            <TextField fx:id="txtId" managed="false" visible="false" />
 
             <Label text="Código" />
             <TextField fx:id="txtCodigo" promptText="Ej. P001" />
@@ -41,17 +43,16 @@
                 <padding>
                     <Insets top="10.0" />
                 </padding>
-                <Button onAction="#onNuevo" text="Nuevo" />
-                <Button onAction="#onGuardar" style="-fx-background-color: #69dbff; -fx-font-style: #69dbff;" text="Guardar" />
-                <Button onAction="#onActualizar" text="Actualizar" />
-                <Button onAction="#onEliminar" text="Eliminar" />
+                <Button onAction="#NuevoProducto" text="Nuevo" />
+                <Button onAction="#GuardarProducto" style="-fx-background-color: #69dbff; -fx-font-style: #69dbff;" text="Guardar" />
+                <Button onAction="#ActualizarProducto" text="Actualizar" />
+                <Button onAction="#EliminarProducto" text="Eliminar" />
             </FlowPane>
 
             <Label fx:id="lblMensaje" wrapText="true" />
         </VBox>
     </left>
 
-    <!-- BÚSQUEDA, FILTROS Y TABLA -->
     <center>
         <VBox spacing="10.0">
             <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Catálogo de productos" />
