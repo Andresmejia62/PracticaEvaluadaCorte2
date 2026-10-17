@@ -66,9 +66,9 @@
             </HBox>
 
             <HBox spacing="10.0">
-                <Button onAction="#onBuscar" style="-fx-background-color: #6fff84;" text="Buscar" />
-                <Button onAction="#onLimpiarFiltros" text="Limpiar filtros" />
-                <Button onAction="#onRecargar" text="Recargar" />
+                <Button onAction="#Buscar" style="-fx-background-color: #6fff84;" text="Buscar" />
+                <Button onAction="#LimpiarFiltros" text="Limpiar filtros" />
+                <Button onAction="#Recargar" text="Recargar" />
             </HBox>
 
             <Separator />
