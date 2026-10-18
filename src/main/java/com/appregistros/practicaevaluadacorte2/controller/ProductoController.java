@@ -85,13 +85,13 @@ public class ProductoController {
             return false;
         }
     }
-
+// Comprueba si hay filtros aplicados para mostrar un mensaje en el contador.
     private boolean hayFiltrosVigentes() {
         return (filtroTexto != null && !filtroTexto.isBlank())
                 || (filtroCategoria != null && !filtroCategoria.isBlank())
                 || (filtroStock != null && !filtroStock.isBlank() && !"Todos".equals(filtroStock));
     }
-
+// Actualiza el texto del contador de productos mostrados, indicando si hay filtros aplicados.
     private void actualizarContador() {
         String texto = "Productos mostrados: " + productos.size();
         if (hayFiltrosVigentes()) texto += " (con filtros aplicados)";
