@@ -12,8 +12,6 @@ import java.util.regex.Pattern;
 // Valida y normaliza los datos del formulario antes de enviarlos al DAO.
 // Las reglas reflejan las restricciones de catalogo.producto para que ningún dato inválido llegue a PostgreSQL.
 // Se usa igual al insertar y al actualizar.
-
-//Realizado con IA y Microsoft
 public final class ProductoValidator {
 
     public static final int MAX_CODIGO = 10;

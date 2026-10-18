@@ -44,7 +44,7 @@
                     <Insets top="10.0" />
                 </padding>
                 <Button onAction="#NuevoProducto" text="Nuevo" />
-                <Button onAction="#GuardarProducto" style="-fx-background-color: #69dbff; -fx-font-style: #69dbff;" text="Guardar" />
+                <Button onAction="#GuardarProducto" style="-fx-background-color: #69dbff;" text="Guardar" />
                 <Button onAction="#ActualizarProducto" text="Actualizar" />
                 <Button onAction="#EliminarProducto" text="Eliminar" />
             </FlowPane>
