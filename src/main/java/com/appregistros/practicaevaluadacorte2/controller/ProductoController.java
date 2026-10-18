@@ -1,6 +1,6 @@
 package com.appregistros.practicaevaluadacorte2.controller;
 
-import com.appregistros.practicaevaluadacorte2.Database.DatabaseConnection;
+import com.appregistros.practicaevaluadacorte2.dao.ProductoDAO;
 import com.appregistros.practicaevaluadacorte2.model.Producto;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -8,13 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ProductoController {
     @FXML
@@ -37,6 +31,7 @@ public class ProductoController {
     private TableColumn<Producto, BigDecimal> colPrecio;
 
     private final ObservableList<Producto> productos = FXCollections.observableArrayList();
+    private final ProductoDAO productoDAO = new ProductoDAO();
 
     @FXML
     private void initialize() {
@@ -58,39 +53,20 @@ public class ProductoController {
     }
 
     private void cargarProductos() {
-        System.out.println("CargarProductos invoked");
-        productos.clear();
-
-        String sql = "SELECT id_producto, codigo, nombre, categoria, precio, stock FROM catalogo.producto WHERE stock > 0 ORDER BY id_producto";
-
-        try (Connection connection = DatabaseConnection.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(sql)) {
-
-            while (resultSet.next()) {
-                Producto producto = new Producto(
-                        resultSet.getInt("id_producto"),
-                        resultSet.getString("codigo"),
-                        resultSet.getString("nombre"),
-                        resultSet.getString("categoria"),
-                        resultSet.getBigDecimal("precio"),
-                        resultSet.getInt("stock")
-                );
-                productos.add(producto);
-            }
-
+        try {
+            productos.setAll(productoDAO.listarActivos());
             tblProductos.setItems(productos);
-
         } catch (SQLException ex) {
             System.out.println("error al cargar Productos: " + ex.getMessage());
             ex.printStackTrace();
+            mostrarAlerta(Alert.AlertType.ERROR, "No se pudieron cargar los productos.");
         }
     }
 
     private void cargarCombos() {
-        try (Connection connection = DatabaseConnection.getConnection()) {
-            cargarCombo(connection, "SELECT DISTINCT categoria FROM catalogo.producto WHERE categoria IS NOT NULL ORDER BY categoria", cmbCategoria);
-            cargarCombo(connection, "SELECT DISTINCT categoria FROM catalogo.producto WHERE categoria IS NOT NULL ORDER BY categoria", cmbFiltroCategoria);
+        try {
+            cmbCategoria.getItems().setAll(productoDAO.obtenerCategorias());
+            cmbFiltroCategoria.getItems().setAll(productoDAO.obtenerCategorias());
             cmbFiltroStock.getItems().setAll("Todos", "Con stock", "Sin stock");
         } catch (SQLException ex) {
             System.out.println("error al cargar combos: " + ex.getMessage());
@@ -98,22 +74,8 @@ public class ProductoController {
         }
     }
 
-    private void cargarCombo(Connection connection, String sql, ComboBox<String> comboBox) throws SQLException {
-        comboBox.getItems().clear();
-
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
-
-            while (resultSet.next()) {
-                comboBox.getItems().add(resultSet.getString(1));
-            }
-        }
-    }
-
     @FXML
     private void GuardarProducto() {
-        System.out.println("GuardarProducto invoked");
-
         String codigo = txtCodigo.getText() == null ? "" : txtCodigo.getText().trim();
         String nombre = txtNombre.getText() == null ? "" : txtNombre.getText().trim();
         String categoria = cmbCategoria.getValue();
@@ -142,32 +104,24 @@ public class ProductoController {
             return;
         }
 
-        codigo = codigo.toUpperCase();
-        nombre = nombre.trim();
+        Producto producto = new Producto();
+        producto.setCodigo(codigo.toUpperCase());
+        producto.setNombre(nombre);
+        producto.setCategoria(categoria);
+        producto.setPrecio(precio);
+        producto.setStock(stock);
 
-        String sql = "INSERT INTO catalogo.producto (codigo, nombre, categoria, precio, stock) VALUES (?, ?, ?, ?, ?)";
-
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            preparedStatement.setString(1, codigo);
-            preparedStatement.setString(2, nombre);
-            preparedStatement.setString(3, categoria);
-            preparedStatement.setBigDecimal(4, precio);
-            preparedStatement.setInt(5, stock);
-
-            int filas = preparedStatement.executeUpdate();
-
-            if (filas > 0) {
-                System.out.println("Producto guardado correctamente");
+        try {
+            boolean guardado = productoDAO.guardar(producto);
+            if (guardado) {
                 cargarProductos();
                 limpiarFormulario();
+                cargarCombos();
                 mostrarAlerta(Alert.AlertType.INFORMATION, "Producto guardado correctamente.");
+            } else {
+                mostrarAlerta(Alert.AlertType.ERROR, "No se pudo guardar el producto.");
             }
-
         } catch (SQLException ex) {
-            System.out.println("error al guardar Producto: " + ex.getMessage());
-            ex.printStackTrace();
             String mensaje = ex.getMessage() != null ? ex.getMessage() : "No se pudo guardar el producto.";
             mostrarAlerta(Alert.AlertType.ERROR, "Error al guardar: " + mensaje);
         }
@@ -181,35 +135,27 @@ public class ProductoController {
         }
         if (!validarFormulario()) return;
 
-        String sql = "UPDATE catalogo.producto SET codigo = ?, nombre = ?, categoria = ?, precio = ?, stock = ? WHERE id_producto = ?";
+        Producto producto = new Producto();
+        producto.setIdProducto(Integer.parseInt(txtId.getText().trim()));
+        producto.setCodigo(txtCodigo.getText().trim().toUpperCase());
+        producto.setNombre(txtNombre.getText().trim());
+        producto.setCategoria(cmbCategoria.getValue());
+        producto.setPrecio(new BigDecimal(txtPrecio.getText().trim()));
+        producto.setStock(Integer.parseInt(txtStock.getText().trim()));
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            preparedStatement.setString(1, txtCodigo.getText().trim());
-            preparedStatement.setString(2, txtNombre.getText().trim());
-            preparedStatement.setString(3, cmbCategoria.getValue());
-            preparedStatement.setBigDecimal(4, new BigDecimal(txtPrecio.getText().trim()));
-            preparedStatement.setInt(5, Integer.parseInt(txtStock.getText().trim()));
-            preparedStatement.setInt(6, Integer.parseInt(txtId.getText().trim()));
-
-            int filas = preparedStatement.executeUpdate();
-
-            if (filas > 0) {
-                System.out.println("Producto actualizado correctamente");
-                cargarProductos();
-                limpiarFormulario();
-                tblProductos.getSelectionModel().clearSelection();
+        try {
+            boolean actualizado = productoDAO.actualizar(producto);
+            if (actualizado) {
+               cargarProductos();
+               limpiarFormulario();
+               tblProductos.getSelectionModel().clearSelection();
+               mostrarAlerta(Alert.AlertType.INFORMATION, "Producto actualizado correctamente.");
             } else {
-                mostrarAlerta(Alert.AlertType.ERROR, "No se pudo actualizar el producto.");
+               mostrarAlerta(Alert.AlertType.ERROR, "No se pudo actualizar el producto.");
             }
-
         } catch (SQLException ex) {
-            System.out.println("error al actualizar Producto: " + ex.getMessage());
-            ex.printStackTrace();
             mostrarAlerta(Alert.AlertType.ERROR, "Error al actualizar el producto: " + ex.getMessage());
         } catch (NumberFormatException ex) {
-            System.out.println("ID, precio o stock inválidos");
             mostrarAlerta(Alert.AlertType.ERROR, "ID, precio o stock inválidos.");
         }
     }
@@ -230,26 +176,17 @@ public class ProductoController {
 
         confirmacion.showAndWait().ifPresent(respuesta -> {
             if (respuesta == ButtonType.OK) {
-                String sql = "DELETE FROM catalogo.producto WHERE id_producto = ?";
-
-                try (Connection connection = DatabaseConnection.getConnection();
-                     PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-                    preparedStatement.setInt(1, seleccionado.getIdProducto());
-                    int filas = preparedStatement.executeUpdate();
-
-                    if (filas > 0) {
-                        System.out.println("Producto eliminado correctamente");
+                try {
+                    boolean eliminado = productoDAO.eliminarPorId(seleccionado.getIdProducto());
+                    if (eliminado) {
                         cargarProductos();
                         limpiarFormulario();
                         tblProductos.getSelectionModel().clearSelection();
+                        mostrarAlerta(Alert.AlertType.INFORMATION, "Producto eliminado correctamente.");
                     } else {
                         mostrarAlerta(Alert.AlertType.ERROR, "No se pudo eliminar el producto.");
                     }
-
                 } catch (SQLException ex) {
-                    System.out.println("error al eliminar Producto: " + ex.getMessage());
-                    ex.printStackTrace();
                     mostrarAlerta(Alert.AlertType.ERROR, "Error al eliminar el producto: " + ex.getMessage());
                 }
             }
@@ -262,79 +199,21 @@ public class ProductoController {
         tblProductos.getSelectionModel().clearSelection();
     }
 
-    private Producto crearProductoDesdeResultSet(ResultSet rs) throws SQLException {
-        return new Producto(
-                rs.getInt("id_producto"),
-                rs.getString("codigo"),
-                rs.getString("nombre"),
-                rs.getString("categoria"),
-                rs.getBigDecimal("precio"),
-                rs.getInt("stock")
-        );
-    }
-
     @FXML
     private void Buscar() {
-        productos.clear();
+        try {
+            String texto = txtBuscar.getText() == null ? "" : txtBuscar.getText().trim();
+            String categoria = cmbFiltroCategoria != null ? cmbFiltroCategoria.getValue() : null;
+            String stockFiltro = cmbFiltroStock != null ? cmbFiltroStock.getValue() : null;
 
-        StringBuilder sql = new StringBuilder("""
-                SELECT id_producto, codigo, nombre, categoria, precio, stock
-                FROM catalogo.producto
-                WHERE 1 = 1
-                """);
-
-        List<Object> parametros = new ArrayList<>();
-
-        String texto = txtBuscar.getText() == null ? "" : txtBuscar.getText().trim();
-        if (!texto.isBlank()) {
-            sql.append("""
-                    AND (
-                        codigo ILIKE ?
-                        OR nombre ILIKE ?
-                    )
-                    """);
-            parametros.add("%" + texto + "%");
-            parametros.add("%" + texto + "%");
-        }
-
-        String categoria = cmbFiltroCategoria != null ? cmbFiltroCategoria.getValue() : null;
-        if (categoria != null && !categoria.isBlank()) {
-            sql.append(" AND categoria = ? ");
-            parametros.add(categoria);
-        }
-
-        String stockFiltro = cmbFiltroStock != null ? cmbFiltroStock.getValue() : null;
-        if (stockFiltro != null && !stockFiltro.isBlank()) {
-            switch (stockFiltro) {
-                case "Con stock" -> sql.append(" AND stock > 0 ");
-                case "Sin stock" -> sql.append(" AND stock = 0 ");
-                default -> {
-                }
-            }
-        }
-
-        sql.append(" ORDER BY nombre ASC ");
-
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql.toString())) {
-
-            for (int i = 0; i < parametros.size(); i++) {
-                statement.setObject(i + 1, parametros.get(i));
-            }
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    productos.add(crearProductoDesdeResultSet(resultSet));
-                }
-            }
-
+            productos.setAll(productoDAO.buscar(texto, categoria, stockFiltro));
             tblProductos.setItems(productos);
 
             if (productos.isEmpty()) {
                 mostrarAlerta(Alert.AlertType.INFORMATION, "Sin resultados para la búsqueda.");
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
             mostrarAlerta(Alert.AlertType.ERROR, "No se pudo realizar la búsqueda.");
         }
     }

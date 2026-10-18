@@ -9,5 +9,6 @@ module com.appregistros.practicaevaluadacorte2 {
     exports com.appregistros.practicaevaluadacorte2;
     exports com.appregistros.practicaevaluadacorte2.Database;
     exports com.appregistros.practicaevaluadacorte2.controller;
+    exports com.appregistros.practicaevaluadacorte2.dao;
     exports com.appregistros.practicaevaluadacorte2.model;
 }
