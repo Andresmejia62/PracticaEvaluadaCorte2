@@ -1,5 +1,6 @@
 package com.appregistros.practicaevaluadacorte2.controller;
 
+import com.appregistros.practicaevaluadacorte2.dao.DataAccessException;
 import com.appregistros.practicaevaluadacorte2.dao.ProductoDAO;
 import com.appregistros.practicaevaluadacorte2.model.Producto;
 import javafx.collections.FXCollections;
@@ -8,7 +9,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 
 // Controlador de la vista de productos.
 // Coordina la interacción entre la interfaz JavaFX y la capa DAO.
@@ -60,23 +60,18 @@ public class ProductoController {
         try {
             productos.setAll(productoDAO.listarActivos());
             tblProductos.setItems(productos);
-        } catch (SQLException ex) {
-            System.out.println("error al cargar Productos: " + ex.getMessage());
-            ex.printStackTrace();
-            mostrarAlerta(Alert.AlertType.ERROR, "No se pudieron cargar los productos.");
+        } catch (DataAccessException ex) {
+            productos.clear();
+            mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
         }
     }
 
     // Carga las opciones de categoría y filtro que se muestran en la vista.
+    // Las categorías son fijas porque la base solo admite las definidas en chk_categoria.
     private void cargarCombos() {
-        try {
-            cmbCategoria.getItems().setAll(productoDAO.obtenerCategorias());
-            cmbFiltroCategoria.getItems().setAll(productoDAO.obtenerCategorias());
-            cmbFiltroStock.getItems().setAll("Todos", "Con stock", "Sin stock");
-        } catch (SQLException ex) {
-            System.out.println("error al cargar combos: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+        cmbCategoria.getItems().setAll(Producto.CATEGORIAS);
+        cmbFiltroCategoria.getItems().setAll(Producto.CATEGORIAS);
+        cmbFiltroStock.getItems().setAll("Todos", "Con stock", "Sin stock");
     }
 
     // Guarda un producto nuevo con validación de entradas y manejo de alertas.
@@ -122,14 +117,12 @@ public class ProductoController {
             if (guardado) {
                 cargarProductos();
                 limpiarFormulario();
-                cargarCombos();
                 mostrarAlerta(Alert.AlertType.INFORMATION, "Producto guardado correctamente.");
             } else {
                 mostrarAlerta(Alert.AlertType.ERROR, "No se pudo guardar el producto.");
             }
-        } catch (SQLException ex) {
-            String mensaje = ex.getMessage() != null ? ex.getMessage() : "No se pudo guardar el producto.";
-            mostrarAlerta(Alert.AlertType.ERROR, "Error al guardar: " + mensaje);
+        } catch (DataAccessException ex) {
+            mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
         }
     }
 
@@ -160,8 +153,8 @@ public class ProductoController {
             } else {
                mostrarAlerta(Alert.AlertType.ERROR, "No se pudo actualizar el producto.");
             }
-        } catch (SQLException ex) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Error al actualizar el producto: " + ex.getMessage());
+        } catch (DataAccessException ex) {
+            mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
         } catch (NumberFormatException ex) {
             mostrarAlerta(Alert.AlertType.ERROR, "ID, precio o stock inválidos.");
         }
@@ -194,8 +187,8 @@ public class ProductoController {
                     } else {
                         mostrarAlerta(Alert.AlertType.ERROR, "No se pudo eliminar el producto.");
                     }
-                } catch (SQLException ex) {
-                    mostrarAlerta(Alert.AlertType.ERROR, "Error al eliminar el producto: " + ex.getMessage());
+                } catch (DataAccessException ex) {
+                    mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
                 }
             }
         });
@@ -222,9 +215,9 @@ public class ProductoController {
             if (productos.isEmpty()) {
                 mostrarAlerta(Alert.AlertType.INFORMATION, "Sin resultados para la búsqueda.");
             }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            mostrarAlerta(Alert.AlertType.ERROR, "No se pudo realizar la búsqueda.");
+        } catch (DataAccessException ex) {
+            productos.clear();
+            mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
         }
     }
 

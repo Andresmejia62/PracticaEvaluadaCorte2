@@ -8,8 +8,12 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class Producto {
+    // Categorías permitidas; coinciden con la restricción chk_categoria de la tabla catalogo.producto.
+    public static final List<String> CATEGORIAS = List.of("Papeleria", "Tecnologia", "Accesorios");
+
     private final IntegerProperty idProducto = new SimpleIntegerProperty(this, "idProducto");
     private final StringProperty codigo = new SimpleStringProperty(this, "codigo");
     private final StringProperty nombre = new SimpleStringProperty(this, "nombre");

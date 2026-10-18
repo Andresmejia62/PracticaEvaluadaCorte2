@@ -2,6 +2,7 @@ module com.appregistros.practicaevaluadacorte2 {
     requires javafx.controls;
     requires javafx.fxml;
     requires java.sql;
+    requires java.logging;
     requires org.postgresql.jdbc;
 
     opens com.appregistros.practicaevaluadacorte2 to javafx.fxml;
