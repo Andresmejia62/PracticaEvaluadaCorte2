@@ -122,9 +122,28 @@ public class ProductoController {
 
         if (codigo.isEmpty() || nombre.isEmpty() || categoria == null || categoria.isBlank()
                 || precioTexto.isEmpty() || stockTexto.isEmpty()) {
-            System.out.println("Completa todos los campos");
+            mostrarAlerta(Alert.AlertType.WARNING, "Completa todos los campos antes de guardar.");
             return;
         }
+
+        BigDecimal precio;
+        int stock;
+
+        try {
+            precio = new BigDecimal(precioTexto);
+            stock = Integer.parseInt(stockTexto);
+        } catch (NumberFormatException ex) {
+            mostrarAlerta(Alert.AlertType.ERROR, "Precio o stock inválidos.");
+            return;
+        }
+
+        if (precio.compareTo(BigDecimal.ZERO) <= 0 || stock <= 0) {
+            mostrarAlerta(Alert.AlertType.ERROR, "Precio y stock deben ser mayores que cero.");
+            return;
+        }
+
+        codigo = codigo.toUpperCase();
+        nombre = nombre.trim();
 
         String sql = "INSERT INTO catalogo.producto (codigo, nombre, categoria, precio, stock) VALUES (?, ?, ?, ?, ?)";
 
@@ -134,8 +153,8 @@ public class ProductoController {
             preparedStatement.setString(1, codigo);
             preparedStatement.setString(2, nombre);
             preparedStatement.setString(3, categoria);
-            preparedStatement.setBigDecimal(4, new BigDecimal(precioTexto));
-            preparedStatement.setInt(5, Integer.parseInt(stockTexto));
+            preparedStatement.setBigDecimal(4, precio);
+            preparedStatement.setInt(5, stock);
 
             int filas = preparedStatement.executeUpdate();
 
@@ -143,13 +162,14 @@ public class ProductoController {
                 System.out.println("Producto guardado correctamente");
                 cargarProductos();
                 limpiarFormulario();
+                mostrarAlerta(Alert.AlertType.INFORMATION, "Producto guardado correctamente.");
             }
 
         } catch (SQLException ex) {
             System.out.println("error al guardar Producto: " + ex.getMessage());
             ex.printStackTrace();
-        } catch (NumberFormatException ex) {
-            System.out.println("Precio o stock inválidos");
+            String mensaje = ex.getMessage() != null ? ex.getMessage() : "No se pudo guardar el producto.";
+            mostrarAlerta(Alert.AlertType.ERROR, "Error al guardar: " + mensaje);
         }
     }
 
