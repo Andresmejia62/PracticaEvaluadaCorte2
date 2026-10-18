@@ -1,0 +1,34 @@
+# Estado de catalogo.producto en PostgreSQL durante el ciclo CRUD (capturas 05, 08, 10 y 11)
+
+## 05_crud_crear
+$ SELECT * FROM catalogo.producto WHERE codigo = 'P010'
+ id_producto | codigo |     nombre     | categoria | precio | stock 
+-------------+--------+----------------+-----------+--------+-------
+          14 | P010   | Marcador negro | Papeleria |  25.50 |    10
+(1 row)
+
+
+## 08_crud_actualizar
+$ SELECT * FROM catalogo.producto WHERE codigo = 'P010'
+ id_producto | codigo |     nombre     | categoria | precio | stock 
+-------------+--------+----------------+-----------+--------+-------
+          14 | P010   | Marcador negro | Papeleria |  30.00 |    15
+(1 row)
+
+
+## 10_crud_eliminar_cancelado
+$ SELECT * FROM catalogo.producto WHERE codigo = 'P010'
+ id_producto | codigo |     nombre     | categoria | precio | stock 
+-------------+--------+----------------+-----------+--------+-------
+          14 | P010   | Marcador negro | Papeleria |  30.00 |    15
+(1 row)
+
+
+## 11_crud_eliminar_aceptado
+$ SELECT count(*) AS productos, count(*) FILTER (WHERE codigo = 'P010') AS p010 FROM catalogo.producto
+ productos | p010 
+-----------+------
+        12 |    0
+(1 row)
+
+

@@ -37,3 +37,5 @@ build/
 
 ### Mac OS ###
 .DS_Store
+### Configuración local con credenciales reales ###
+config/db.properties

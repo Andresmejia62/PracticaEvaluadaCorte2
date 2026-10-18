@@ -1,0 +1,8 @@
+# Configuración de ejemplo de la conexión a PostgreSQL (sin secretos).
+# 1. Copie este archivo como config/db.properties (ese archivo está en .gitignore y no se sube).
+# 2. Escriba sus propios valores.
+# Las variables de entorno DB_URL, DB_USER y DB_PASSWORD, si existen, tienen prioridad sobre este archivo.
+
+db.url=jdbc:postgresql://localhost:5432/papeleria_campus
+db.user=su_usuario
+db.password=su_contraseña
