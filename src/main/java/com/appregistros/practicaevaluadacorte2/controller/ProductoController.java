@@ -11,6 +11,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 // Controlador de la vista de productos.
 // Coordina la interacción entre la interfaz JavaFX y la capa DAO.
@@ -34,8 +35,17 @@ public class ProductoController {
     @FXML
     private TableColumn<Producto, BigDecimal> colPrecio;
 
+    @FXML
+    private Label lblContador;
+
     private final ObservableList<Producto> productos = FXCollections.observableArrayList();
     private final ProductoDAO productoDAO = new ProductoDAO();
+
+    // Filtros vigentes: los aplicados con el botón Buscar. Se reutilizan al recargar la tabla
+    // después de guardar, actualizar o eliminar, para no perder la vista filtrada.
+    private String filtroTexto;
+    private String filtroCategoria;
+    private String filtroStock;
 
     // Inicializa columnas, listas y combos al abrir la vista.
     @FXML
@@ -47,25 +57,45 @@ public class ProductoController {
         colPrecio.setCellValueFactory(cellData -> cellData.getValue().precioProperty());
         colStock.setCellValueFactory(cellData -> cellData.getValue().stockProperty().asObject());
         cargarCombos();
-        cargarProductos();
-
 
         tblProductos.getSelectionModel().selectedItemProperty().addListener(
                 (obs, anterior, seleccionado) -> {
                     if (seleccionado != null) mostrarEnFormulario(seleccionado);
                 });
         tblProductos.setItems(productos);
+
+        cargarProductos();
     }
 
-    // Carga los productos activos desde la base de datos.
-    private void cargarProductos() {
+    // Consulta la base respetando los filtros vigentes y actualiza la tabla y el contador.
+    // Si la consulta falla, la tabla se vacía para no mostrar un listado desactualizado como si fuera correcto.
+    // Devuelve true si la consulta se completó.
+    private boolean cargarProductos() {
         try {
-            productos.setAll(productoDAO.listarActivos());
-            tblProductos.setItems(productos);
+            List<Producto> resultado = hayFiltrosVigentes()
+                    ? productoDAO.buscar(filtroTexto, filtroCategoria, filtroStock)
+                    : productoDAO.listarActivos();
+            productos.setAll(resultado);
+            actualizarContador();
+            return true;
         } catch (DataAccessException ex) {
             productos.clear();
+            lblContador.setText("No se pudieron cargar los productos.");
             mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
+            return false;
         }
+    }
+
+    private boolean hayFiltrosVigentes() {
+        return (filtroTexto != null && !filtroTexto.isBlank())
+                || (filtroCategoria != null && !filtroCategoria.isBlank())
+                || (filtroStock != null && !filtroStock.isBlank() && !"Todos".equals(filtroStock));
+    }
+
+    private void actualizarContador() {
+        String texto = "Productos mostrados: " + productos.size();
+        if (hayFiltrosVigentes()) texto += " (con filtros aplicados)";
+        lblContador.setText(texto);
     }
 
     // Carga las opciones de categoría y filtro que se muestran en la vista.
@@ -85,8 +115,9 @@ public class ProductoController {
         try {
             boolean guardado = productoDAO.guardar(producto);
             if (guardado) {
-                cargarProductos();
                 limpiarFormulario();
+                tblProductos.getSelectionModel().clearSelection();
+                cargarProductos();
                 mostrarAlerta(Alert.AlertType.INFORMATION, "Producto guardado correctamente.");
             } else {
                 mostrarAlerta(Alert.AlertType.ERROR, "No se pudo guardar el producto.");
@@ -112,12 +143,15 @@ public class ProductoController {
         try {
             boolean actualizado = productoDAO.actualizar(producto);
             if (actualizado) {
-               cargarProductos();
-               limpiarFormulario();
-               tblProductos.getSelectionModel().clearSelection();
-               mostrarAlerta(Alert.AlertType.INFORMATION, "Producto actualizado correctamente.");
+                limpiarFormulario();
+                tblProductos.getSelectionModel().clearSelection();
+                cargarProductos();
+                mostrarAlerta(Alert.AlertType.INFORMATION, "Producto actualizado correctamente.");
             } else {
-               mostrarAlerta(Alert.AlertType.ERROR, "No se pudo actualizar el producto.");
+                // Cero filas afectadas: el producto ya no existe (p. ej. lo eliminó otro usuario).
+                cargarProductos();
+                mostrarAlerta(Alert.AlertType.WARNING,
+                        "No se actualizó ningún producto: el registro seleccionado ya no existe. Se recargó la tabla.");
             }
         } catch (DataAccessException ex) {
             mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
@@ -134,28 +168,33 @@ public class ProductoController {
             return;
         }
 
-        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+        ButtonType aceptar = new ButtonType("Aceptar", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelar = new ButtonType("Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION, "", aceptar, cancelar);
         confirmacion.setTitle("Confirmar eliminación");
         confirmacion.setHeaderText(null);
-        confirmacion.setContentText("¿Deseas eliminar el producto " + seleccionado.getNombre() + "?");
+        confirmacion.setContentText("¿Deseas eliminar el producto " + seleccionado.getCodigo() + " - "
+                + seleccionado.getNombre() + "? Esta acción no se puede deshacer.");
 
-        confirmacion.showAndWait().ifPresent(respuesta -> {
-            if (respuesta == ButtonType.OK) {
-                try {
-                    boolean eliminado = productoDAO.eliminarPorId(seleccionado.getIdProducto());
-                    if (eliminado) {
-                        cargarProductos();
-                        limpiarFormulario();
-                        tblProductos.getSelectionModel().clearSelection();
-                        mostrarAlerta(Alert.AlertType.INFORMATION, "Producto eliminado correctamente.");
-                    } else {
-                        mostrarAlerta(Alert.AlertType.ERROR, "No se pudo eliminar el producto.");
-                    }
-                } catch (DataAccessException ex) {
-                    mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
-                }
+        // Cancelar o cerrar la ventana no modifica nada.
+        if (confirmacion.showAndWait().orElse(cancelar) != aceptar) return;
+
+        try {
+            boolean eliminado = productoDAO.eliminarPorId(seleccionado.getIdProducto());
+            if (eliminado) {
+                limpiarFormulario();
+                tblProductos.getSelectionModel().clearSelection();
+                cargarProductos();
+                mostrarAlerta(Alert.AlertType.INFORMATION, "Producto eliminado correctamente.");
+            } else {
+                cargarProductos();
+                mostrarAlerta(Alert.AlertType.WARNING,
+                        "No se eliminó ningún producto: el registro seleccionado ya no existe. Se recargó la tabla.");
             }
-        });
+        } catch (DataAccessException ex) {
+            mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
+        }
     }
 
     // Limpia el formulario para ingresar un nuevo producto.
@@ -165,23 +204,15 @@ public class ProductoController {
         tblProductos.getSelectionModel().clearSelection();
     }
 
-    // Aplica filtros de texto, categoría y stock sobre los productos.
+    // Aplica filtros de texto, categoría y stock sobre los productos; quedan vigentes hasta limpiarlos.
     @FXML
     private void Buscar() {
-        try {
-            String texto = txtBuscar.getText() == null ? "" : txtBuscar.getText().trim();
-            String categoria = cmbFiltroCategoria != null ? cmbFiltroCategoria.getValue() : null;
-            String stockFiltro = cmbFiltroStock != null ? cmbFiltroStock.getValue() : null;
+        filtroTexto = txtBuscar.getText() == null ? "" : txtBuscar.getText().trim();
+        filtroCategoria = cmbFiltroCategoria.getValue();
+        filtroStock = cmbFiltroStock.getValue();
 
-            productos.setAll(productoDAO.buscar(texto, categoria, stockFiltro));
-            tblProductos.setItems(productos);
-
-            if (productos.isEmpty()) {
-                mostrarAlerta(Alert.AlertType.INFORMATION, "Sin resultados para la búsqueda.");
-            }
-        } catch (DataAccessException ex) {
-            productos.clear();
-            mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
+        if (cargarProductos() && productos.isEmpty()) {
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Sin resultados para la búsqueda.");
         }
     }
 
@@ -190,12 +221,15 @@ public class ProductoController {
         txtBuscar.clear();
         cmbFiltroCategoria.setValue(null);
         cmbFiltroStock.setValue(null);
+        filtroTexto = null;
+        filtroCategoria = null;
+        filtroStock = null;
         cargarProductos();
     }
 
+    // Vuelve a consultar la base manteniendo los filtros vigentes.
     @FXML
     private void Recargar() {
-
         cargarProductos();
     }
 
@@ -207,7 +241,7 @@ public class ProductoController {
         txtCodigo.setText(producto.getCodigo());
         txtNombre.setText(producto.getNombre());
         cmbCategoria.setValue(producto.getCategoria());
-        txtPrecio.setText(String.valueOf(producto.getPrecio()));
+        txtPrecio.setText(producto.getPrecio() == null ? "" : producto.getPrecio().toPlainString());
         txtStock.setText(String.valueOf(producto.getStock()));
     }
 
