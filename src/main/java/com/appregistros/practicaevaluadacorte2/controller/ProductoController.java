@@ -10,6 +10,8 @@ import javafx.scene.control.*;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 
+// Controlador de la vista de productos.
+// Coordina la interacción entre la interfaz JavaFX y la capa DAO.
 public class ProductoController {
     @FXML
     private TextField txtId, txtCodigo, txtNombre, txtPrecio, txtStock;
@@ -33,6 +35,7 @@ public class ProductoController {
     private final ObservableList<Producto> productos = FXCollections.observableArrayList();
     private final ProductoDAO productoDAO = new ProductoDAO();
 
+    // Inicializa columnas, listas y combos al abrir la vista.
     @FXML
     private void initialize() {
         colId.setCellValueFactory(cellData -> cellData.getValue().idProductoProperty().asObject());
@@ -52,6 +55,7 @@ public class ProductoController {
         tblProductos.setItems(productos);
     }
 
+    // Carga los productos activos desde la base de datos.
     private void cargarProductos() {
         try {
             productos.setAll(productoDAO.listarActivos());
@@ -63,6 +67,7 @@ public class ProductoController {
         }
     }
 
+    // Carga las opciones de categoría y filtro que se muestran en la vista.
     private void cargarCombos() {
         try {
             cmbCategoria.getItems().setAll(productoDAO.obtenerCategorias());
@@ -74,6 +79,7 @@ public class ProductoController {
         }
     }
 
+    // Guarda un producto nuevo con validación de entradas y manejo de alertas.
     @FXML
     private void GuardarProducto() {
         String codigo = txtCodigo.getText() == null ? "" : txtCodigo.getText().trim();
@@ -127,6 +133,7 @@ public class ProductoController {
         }
     }
 
+    // Actualiza la información del producto seleccionado en la tabla.
     @FXML
     private void ActualizarProducto() {
         if (tblProductos.getSelectionModel().getSelectedItem() == null) {
@@ -160,6 +167,7 @@ public class ProductoController {
         }
     }
 
+    // Elimina el producto seleccionado de la base de datos tras confirmación del usuario.
     @FXML
     private void EliminarProducto() {
         Producto seleccionado = tblProductos.getSelectionModel().getSelectedItem();
@@ -193,12 +201,14 @@ public class ProductoController {
         });
     }
 
+    // Limpia el formulario para ingresar un nuevo producto.
     @FXML
     private void NuevoProducto() {
         limpiarFormulario();
         tblProductos.getSelectionModel().clearSelection();
     }
 
+    // Aplica filtros de texto, categoría y stock sobre los productos.
     @FXML
     private void Buscar() {
         try {
@@ -232,6 +242,8 @@ public class ProductoController {
         cargarProductos();
     }
 
+    // Muestra los datos del producto seleccionado en el formulario para edición.
+
     private void mostrarEnFormulario(Producto producto) {
         if (producto == null) return;
         txtId.setText(String.valueOf(producto.getIdProducto()));
@@ -241,6 +253,8 @@ public class ProductoController {
         txtPrecio.setText(String.valueOf(producto.getPrecio()));
         txtStock.setText(String.valueOf(producto.getStock()));
     }
+
+    // Valida que todos los campos del formulario estén completos y correctos antes de guardar o actualizar.
 
     private boolean validarFormulario() {
         String codigo = txtCodigo.getText() == null ? "" : txtCodigo.getText().trim();
@@ -266,6 +280,7 @@ public class ProductoController {
         return true;
     }
 
+    // Muestra una alerta de tipo especificado con el mensaje proporcionado.
     private void mostrarAlerta(Alert.AlertType tipo, String mensaje) {
         Alert alerta = new Alert(tipo);
         alerta.setHeaderText(null);
