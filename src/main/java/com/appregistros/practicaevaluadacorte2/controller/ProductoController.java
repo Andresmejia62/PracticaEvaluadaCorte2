@@ -3,6 +3,8 @@ package com.appregistros.practicaevaluadacorte2.controller;
 import com.appregistros.practicaevaluadacorte2.dao.DataAccessException;
 import com.appregistros.practicaevaluadacorte2.dao.ProductoDAO;
 import com.appregistros.practicaevaluadacorte2.model.Producto;
+import com.appregistros.practicaevaluadacorte2.validacion.ProductoValidator;
+import com.appregistros.practicaevaluadacorte2.validacion.ValidacionException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -74,43 +76,11 @@ public class ProductoController {
         cmbFiltroStock.getItems().setAll("Todos", "Con stock", "Sin stock");
     }
 
-    // Guarda un producto nuevo con validación de entradas y manejo de alertas.
+    // Guarda un producto nuevo; los datos se validan con ProductoValidator antes de llegar al DAO.
     @FXML
     private void GuardarProducto() {
-        String codigo = txtCodigo.getText() == null ? "" : txtCodigo.getText().trim();
-        String nombre = txtNombre.getText() == null ? "" : txtNombre.getText().trim();
-        String categoria = cmbCategoria.getValue();
-        String precioTexto = txtPrecio.getText() == null ? "" : txtPrecio.getText().trim();
-        String stockTexto = txtStock.getText() == null ? "" : txtStock.getText().trim();
-
-        if (codigo.isEmpty() || nombre.isEmpty() || categoria == null || categoria.isBlank()
-                || precioTexto.isEmpty() || stockTexto.isEmpty()) {
-            mostrarAlerta(Alert.AlertType.WARNING, "Completa todos los campos antes de guardar.");
-            return;
-        }
-
-        BigDecimal precio;
-        int stock;
-
-        try {
-            precio = new BigDecimal(precioTexto);
-            stock = Integer.parseInt(stockTexto);
-        } catch (NumberFormatException ex) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Precio o stock inválidos.");
-            return;
-        }
-
-        if (precio.compareTo(BigDecimal.ZERO) <= 0 || stock <= 0) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Precio y stock deben ser mayores que cero.");
-            return;
-        }
-
-        Producto producto = new Producto();
-        producto.setCodigo(codigo.toUpperCase());
-        producto.setNombre(nombre);
-        producto.setCategoria(categoria);
-        producto.setPrecio(precio);
-        producto.setStock(stock);
+        Producto producto = leerFormulario();
+        if (producto == null) return;
 
         try {
             boolean guardado = productoDAO.guardar(producto);
@@ -126,22 +96,18 @@ public class ProductoController {
         }
     }
 
-    // Actualiza la información del producto seleccionado en la tabla.
+    // Actualiza por ID únicamente el producto seleccionado en la tabla, con las mismas validaciones que al guardar.
     @FXML
     private void ActualizarProducto() {
-        if (tblProductos.getSelectionModel().getSelectedItem() == null) {
-            mostrarAlerta(Alert.AlertType.WARNING, "Selecciona un producto de la tabla.");
+        Producto seleccionado = tblProductos.getSelectionModel().getSelectedItem();
+        if (seleccionado == null) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Selecciona un producto de la tabla para actualizar.");
             return;
         }
-        if (!validarFormulario()) return;
 
-        Producto producto = new Producto();
-        producto.setIdProducto(Integer.parseInt(txtId.getText().trim()));
-        producto.setCodigo(txtCodigo.getText().trim().toUpperCase());
-        producto.setNombre(txtNombre.getText().trim());
-        producto.setCategoria(cmbCategoria.getValue());
-        producto.setPrecio(new BigDecimal(txtPrecio.getText().trim()));
-        producto.setStock(Integer.parseInt(txtStock.getText().trim()));
+        Producto producto = leerFormulario();
+        if (producto == null) return;
+        producto.setIdProducto(seleccionado.getIdProducto());
 
         try {
             boolean actualizado = productoDAO.actualizar(producto);
@@ -155,8 +121,6 @@ public class ProductoController {
             }
         } catch (DataAccessException ex) {
             mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
-        } catch (NumberFormatException ex) {
-            mostrarAlerta(Alert.AlertType.ERROR, "ID, precio o stock inválidos.");
         }
     }
 
@@ -247,30 +211,16 @@ public class ProductoController {
         txtStock.setText(String.valueOf(producto.getStock()));
     }
 
-    // Valida que todos los campos del formulario estén completos y correctos antes de guardar o actualizar.
-
-    private boolean validarFormulario() {
-        String codigo = txtCodigo.getText() == null ? "" : txtCodigo.getText().trim();
-        String nombre = txtNombre.getText() == null ? "" : txtNombre.getText().trim();
-        String categoria = cmbCategoria.getValue();
-        String precioTexto = txtPrecio.getText() == null ? "" : txtPrecio.getText().trim();
-        String stockTexto = txtStock.getText() == null ? "" : txtStock.getText().trim();
-
-        if (codigo.isEmpty() || nombre.isEmpty() || categoria == null || categoria.isBlank()
-                || precioTexto.isEmpty() || stockTexto.isEmpty()) {
-            mostrarAlerta(Alert.AlertType.WARNING, "Completa todos los campos antes de actualizar.");
-            return false;
-        }
-
+    // Valida el formulario y devuelve el producto normalizado, o null si alguna regla no se cumple
+    // (en ese caso se muestra el motivo y no se envía nada a la base de datos).
+    private Producto leerFormulario() {
         try {
-            new BigDecimal(precioTexto);
-            Integer.parseInt(stockTexto);
-        } catch (NumberFormatException ex) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Precio o stock inválidos.");
-            return false;
+            return ProductoValidator.validar(txtCodigo.getText(), txtNombre.getText(), cmbCategoria.getValue(),
+                    txtPrecio.getText(), txtStock.getText());
+        } catch (ValidacionException ex) {
+            mostrarAlerta(Alert.AlertType.WARNING, ex.getMessage());
+            return null;
         }
-
-        return true;
     }
 
     // Muestra una alerta de tipo especificado con el mensaje proporcionado.
